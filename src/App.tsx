@@ -50,10 +50,18 @@ function App() {
   const layout = useMemo(() => computeLayout(inputs), [inputs]);
   const validations = useMemo(() => validateLayout(inputs, layout), [inputs, layout]);
 
-  const viewW = 560;
-  const viewH = 560;
-  const margin = 40;
-  const scale = Math.min((viewW - 2 * margin) / inputs.b, (viewH - 2 * margin) / inputs.h);
+  const targetW = 860;
+  const targetH = 520;
+  const margin = 28;
+  const dimGap = 34;
+  const scale = Math.min(
+    (targetW - 2 * margin - dimGap) / inputs.b,
+    (targetH - 2 * margin - dimGap) / inputs.h
+  );
+  const drawW = inputs.b * scale;
+  const drawH = inputs.h * scale;
+  const viewW = margin * 2 + drawW + dimGap + 44;
+  const viewH = margin * 2 + drawH + dimGap + 20;
   const sx = (x: number) => margin + x * scale;
   const sy = (y: number) => margin + y * scale;
 
@@ -178,8 +186,9 @@ function App() {
 
         <section className="panel">
           <h2>Seção 2D</h2>
-          <svg id="beam-svg" viewBox={`0 0 ${viewW} ${viewH}`}>
-            <rect x={sx(0)} y={sy(0)} width={inputs.b * scale} height={inputs.h * scale} className="concrete" />
+          <div className="drawing-wrap">
+          <svg id="beam-svg" viewBox={`0 0 ${viewW} ${viewH}`} preserveAspectRatio="xMinYMin meet">
+            <rect x={sx(0)} y={sy(0)} width={drawW} height={drawH} className="concrete" />
             <rect x={sx(layout.stirrupInner.x)} y={sy(layout.stirrupInner.y)} width={layout.stirrupInner.w * scale} height={layout.stirrupInner.h * scale} className="stirrup" />
             {layout.innerLegs.map((x, i) => (
               <line key={i} x1={sx(x)} y1={sy(layout.stirrupInner.y)} x2={sx(x)} y2={sy(layout.stirrupInner.y + layout.stirrupInner.h)} className="inner-leg" />
@@ -187,11 +196,12 @@ function App() {
             {layout.bars.map((bar, i) => (
               <circle key={i} cx={sx(bar.x)} cy={sy(bar.y)} r={(bar.phi / 2) * scale} className={`bar ${bar.group}`} />
             ))}
-            <line x1={sx(0)} y1={sy(inputs.h) + 18} x2={sx(inputs.b)} y2={sy(inputs.h) + 18} className="dim" />
-            <text x={sx(inputs.b / 2)} y={sy(inputs.h) + 34} textAnchor="middle">b = {inputs.b} mm</text>
-            <line x1={sx(inputs.b) + 18} y1={sy(0)} x2={sx(inputs.b) + 18} y2={sy(inputs.h)} className="dim" />
-            <text x={sx(inputs.b) + 24} y={sy(inputs.h / 2)}>{`h = ${inputs.h} mm`}</text>
+            <line x1={sx(0)} y1={sy(inputs.h) + dimGap / 2} x2={sx(inputs.b)} y2={sy(inputs.h) + dimGap / 2} className="dim" />
+            <text x={sx(inputs.b / 2)} y={sy(inputs.h) + dimGap} textAnchor="middle">b = {inputs.b} mm</text>
+            <line x1={sx(inputs.b) + dimGap / 2} y1={sy(0)} x2={sx(inputs.b) + dimGap / 2} y2={sy(inputs.h)} className="dim" />
+            <text x={sx(inputs.b) + dimGap / 2 + 8} y={sy(inputs.h / 2)}>{`h = ${inputs.h} mm`}</text>
           </svg>
+          </div>
 
           <h3>Legenda</h3>
           <ul>
