@@ -2,8 +2,6 @@ import type { BeamInputs, BarPoint, Layout, ValidationMessage } from './types';
 
 const minClear = (phi: number, dmax: number) => Math.max(20, phi, 1.2 * dmax);
 
-const clampCompartments = (x: number, left: number, right: number) => Math.min(Math.max(x, left), right);
-
 function buildLegs(innerX: number, innerW: number, nPernas: BeamInputs['nPernas']): number[] {
   if (nPernas === 2) return [innerX, innerX + innerW];
   if (nPernas === 4) return [innerX, innerX + innerW / 2, innerX + innerW];
@@ -69,8 +67,8 @@ export function computeLayout(inputs: BeamInputs): Layout {
   const innerLegs = legXs.slice(1, -1);
 
   const compartments = legXs.slice(0, -1).map((x, i) => ({
-    left: x + (i > 0 ? inputs.phiSt / 2 : 0),
-    right: legXs[i + 1] - (i < legXs.length - 2 ? inputs.phiSt / 2 : 0)
+    leftLeg: x,
+    rightLeg: legXs[i + 1]
   }));
 
   const topLayers = normalizeLayers(inputs.topLayers);
@@ -108,11 +106,13 @@ export function computeLayout(inputs: BeamInputs): Layout {
             ? inputs.h - baseOffset
             : prevY - (prevPhi / 2 + clearV + layer.phi / 2);
 
-      const preparedCompartments = compartments.map((c, ci) => {
-        const leftLeg = ci === 0 ? c.left : c.left + inputs.phiSt / 2 + minClear(layer.phi, inputs.dmax);
-        const rightLeg = ci === compartments.length - 1 ? c.right : c.right - (inputs.phiSt / 2 + minClear(layer.phi, inputs.dmax));
-        return { left: clampCompartments(leftLeg, c.left, c.right), right: clampCompartments(rightLeg, c.left, c.right) };
-      });
+      const legGap = minClear(layer.phi, inputs.dmax) + inputs.phiSt / 2 + layer.phi / 2;
+      const preparedCompartments = compartments
+        .map((c) => ({
+          left: c.leftLeg + legGap,
+          right: c.rightLeg - legGap
+        }))
+        .filter((c) => c.right > c.left);
 
       const { bars: layerBars, error } = placeLayerBars(layer.n, layer.phi, y, preparedCompartments, inputs.dmax, idx, zone);
       bars.push(...layerBars);
